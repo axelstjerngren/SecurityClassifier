@@ -10,7 +10,7 @@ import sys
 class predict_data():
   
     def __init__(self,path5,path6):
-        print("Neural network is thinking...")
+        print("Loadingg...")
         self.path5 = path5
         self.path6 = path6
         self.read_dict()
@@ -104,10 +104,10 @@ class predict_data():
       
     def predict_main(self):      
        try:            
-           neural_network_main = pickle.load(
+           classifier_main = pickle.load(
            open( 'main_classifer.pkl', "rb" )
            ) #Using pickled classifier
-           predict_main = neural_network_main.predict(self.prediction_vector)
+           predict_main = classifier_main.predict(self.prediction_vector)
            #Predicting main classifications
            return predict_main             
        except:
@@ -141,10 +141,10 @@ class predict_data():
                       ) 
                   #Vectorizing                
                   try:         
-                      neural_network_sub = pickle.load( 
+                      classifier_sub = pickle.load( 
                           open( asset +'_sub_classifer.pkl', "rb" ) )
                           #Using pickled classifier
-                      predict_sub = neural_network_sub.predict(
+                      predict_sub = classifier_sub.predict(
                           vectorized_prediction_list
                           )#Predicting sub classifications
                       
@@ -181,7 +181,7 @@ class predict_data():
         return final
        
 
-class train_network():
+class train_classifier():
   
       def __init__(self,path1,path2,path3,path6):
             self.no_values = pd.DataFrame({'Security_Nm': ['No values']})   
@@ -192,12 +192,12 @@ class train_network():
             self.read_dict()
         
             self.training_data, self.extra_training_main_data, self.extra_training_sub_data = self.training_data_reader()
-            print("Training network")    
-            """Training main network"""
+            print("Training classifier")    
+            """Training main classifier"""
             a = thr.Thread(target = self.main_classification)
             a.start()
             
-            """Training sub network"""
+            """Training sub classifier"""
             b = thr.Thread(target = self.sub_classification)
             b.start()
             a.join()
@@ -208,21 +208,21 @@ class train_network():
         training_data = pd.read_excel(self.path1 + "test_data.xlsx", usecols= ['Security_Nm',"Class_Main_Id",'Sub_Class_Id', 'Security_Type', 'Security_ISIN'])
             
         """ self.training_data is the variable assigned to the dataframe 
-          containing the data which is used to train the neural network.
+          containing the data which is used to train the classifier.
           This dataframe should contain columns called 'Security_Nm',
           "Class_Main_Id",'Sub_Class_Id', and 'Security_Type' """
                 
         extra_training_main_data = pd.read_excel(self.path2 + "Extra_training_main_data.xlsx", usecols= ['Security_Nm',"Class_Main_Id"])    
             
         """"self.extra_training_data.xlsx contains extra keywords and 
-          associated main classificationsto train the neural network EG 
+          associated main classificationsto train the classifier EG 
           "REDACTED This dataframe should contain columns called
           'Security_Nm',"Class_Main_Id"' """
                 
         extra_training_sub_data = pd.read_excel(self.path3 + "Extra_training_sub_data.xlsx", usecols= ['Security_Nm',"Class_Main_Id", 'Sub_Class_Id'])               
         
         """"self.extra_training_data.xlsx contains extra keywords and
-          associated sub classifications to train the neural network - 
+          associated sub classifications to train the classifier - 
           EG "REDACTED"
           This dataframe should contain columns called 'Security_Nm', 
           'Class_Main_Id','Sub_Class_Id'"""
@@ -297,59 +297,59 @@ class train_network():
                 new_list.append(word) 
        return new_list
   
-    def main_neural_network(self, training_vector, training_dataframe):    
-        neural_network_main = RandomForestClassifier(n_estimators = 200)
-        #Defining neural network
-        neural_network_main.fit(
+    def main_classifier(self, training_vector, training_dataframe):    
+        classifier_main = RandomForestClassifier(n_estimators = 200)
+        #Defining classifier classifier
+        classifier_main.fit(
             training_vector,
             training_dataframe['Class_Main_Id']
-            ) #Training neural 
+            ) #Training classifier 
         name =  'main_classifer.pkl'   
         thr.Thread(
             target= self.pickler,
-            args = (name,neural_network_main)
+            args = (name,classifier_main)
             ).start()
    
       
-    def sub_neural_networks(self, training_vector, training_dataframe, asset):       
+    def sub_classifiers(self, training_vector, training_dataframe, asset):       
        
-        neural_network_sub = RandomForestClassifier(
+        classifier_sub = RandomForestClassifier(
             n_estimators = 200
-            ) #Defining neural network
+            ) #Defining classifier
 
-        neural_network_sub.fit(
+        classifier_sub.fit(
             training_vector,
             training_dataframe['Sub_Class_Id']
-            ) #Training neural network
+            ) #Training classifier
         name = asset + '_sub_classifer.pkl'   
         thr.Thread(target= self.pickler, args = (
             name,
-            neural_network_sub)
+            classifier_sub)
             ).start()
    
     def main_classification(self):
-        network_training_data_appended_main = (
+        classifier_data_appended_main = (
             self.training_data
             .copy()
             .append(self.extra_training_main_data)
             ) #Appending the main training data together with the extra training data
         
-        network_training_data_appended_main_clean = self.noise_reducer(
-            network_training_data_appended_main
+        classifier_training_data_appended_main_clean = self.noise_reducer(
+            classifier_training_data_appended_main
             ) #Sending the main training data through the data cleaner
         
-        network_training_data_appended_main_clean_list = self.listmaker(
-            network_training_data_appended_main_clean
+        classifier_training_data_appended_main_clean_list = self.listmaker(
+            classifier_training_data_appended_main_clean
             )  #Converting main training data to a list
             
         #Vectorising and predicting the main data  
         numerical_vector_training_appended_data  = self.vector_representation(
-            network_training_data_appended_main_clean_list
+            classifier_training_data_appended_main_clean_list
             )
             
-        self.main_neural_network(
+        self.main_classifier(
             numerical_vector_training_appended_data,
-            network_training_data_appended_main_clean
+            classifier_training_data_appended_main_clean
             )
             
     def sub_classification(self):
@@ -370,11 +370,11 @@ class train_network():
                 filtered_training_list,
                 asset) #Vectorizing
                 
-            self.sub_neural_networks(
+            self.sub_classifiers(
                 vectorized_training_list,
                 filtered_training,
                 asset
-                ) #Training sub neural networks
+                ) #Training sub classifiers
             main_class = main_class + 10             
     
     def vector_representation(self, training, variable = "main"):
@@ -434,7 +434,7 @@ class console():
         print("\nThe following commands are available:")
         print("\nhelp     - Provides assistance")
         print("commands - Prints out available commands")
-        print("train    - Trains the neural network based on data passed to it")
+        print("train    - Trains the classifier based on data passed to it")
         print("predict  - Predicts the classification of a list of funds")
         print("path     - Changes the path to input/output file ")
   
@@ -462,7 +462,7 @@ class console():
             elif self.command[1] == "help":
                  print("Really?")
         elif self.command[1] == "train":
-            print("This command is used to train the neural network. It requires three xlsx files called: ")
+            print("This command is used to train the classifier. It requires three xlsx files called: ")
             print("1. 'test_data.xlsx'")
             print("2. 'Extra_training_main_data.xlsx'")
             print("3. 'Extra_training_sub_data.xlsx'")
@@ -492,7 +492,7 @@ class console():
             print("No help available as " + self.command[1] + " is not a valid command")
          
     def train(self):
-         train_network(self.path1,self.path2,self.path3,self.path6)
+         train_classifier(self.path1,self.path2,self.path3,self.path6)
   
     def predict(self):
         predict_data(self.path4,self.path6)
